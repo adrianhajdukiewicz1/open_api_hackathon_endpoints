@@ -164,7 +164,6 @@ async def conversation(request: ConversationRequest):
 
         # Process the results
         for new_item in result.new_items:
-            breakpoint()
             agent_name = getattr(new_item, "agent", None)
             if agent_name:
                 agent_name = agent_name.name
