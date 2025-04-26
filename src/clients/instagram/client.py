@@ -14,13 +14,13 @@ def get_instagram_images_urls(username: str, imgs_limit: int = 10):
         A list of image URLs
     """
     return get_instagram_data(
-        target=username,
+        username=username,
         limit=imgs_limit,
         search_type="user"
     )
 
 def get_instagram_data(
-    target: str,
+    username: str,
     limit: int = 10,
     search_type: str = "user",
     results_type: str = "posts",
@@ -30,7 +30,7 @@ def get_instagram_data(
     Generic function to retrieve Instagram data of various types.
     
     Args:
-        target: Username, hashtag, or URL to fetch data from
+        username: Username
         limit: Maximum number of results to return
         search_type: Type of search to perform ('user', 'hashtag', or 'url')
         results_type: Type of results to get ('posts', 'comments', 'profiles')
@@ -48,11 +48,11 @@ def get_instagram_data(
     
     # Prepare the search URL based on search type
     if search_type == "user":
-        direct_urls = [f"https://www.instagram.com/{target}"]
+        direct_urls = [f"https://www.instagram.com/{username}"]
     elif search_type == "hashtag":
-        direct_urls = [f"https://www.instagram.com/explore/tags/{target}"]
+        direct_urls = [f"https://www.instagram.com/explore/tags/{username}"]
     elif search_type == "url":
-        direct_urls = [target] if isinstance(target, str) else target
+        direct_urls = [username] if isinstance(username, str) else username
     else:
         raise ValueError(f"Invalid search_type: {search_type}. Must be 'user', 'hashtag', or 'url'")
 
