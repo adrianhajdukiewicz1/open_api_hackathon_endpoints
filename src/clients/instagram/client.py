@@ -1,3 +1,4 @@
+import os
 from apify_client import ApifyClient
 from typing import List, Dict, Any, Optional
 
@@ -24,7 +25,6 @@ def get_instagram_data(
     search_type: str = "user",
     results_type: str = "posts",
     add_parent_data: bool = False,
-    api_token: Optional[str] = None
 ) -> List[str]:
     """
     Generic function to retrieve Instagram data of various types.
@@ -41,8 +41,8 @@ def get_instagram_data(
         A list of image URLs
     """
     # Use provided token or fallback to default
-    token = api_token or "apify_api_cLkVolQkIwSmHyOhsJChSqhG2sQyUc4ByPUO"
-    
+    token = os.environ.get("APIFY_API_KEY")
+
     # Initialize the ApifyClient with API token
     client = ApifyClient(token)
     
