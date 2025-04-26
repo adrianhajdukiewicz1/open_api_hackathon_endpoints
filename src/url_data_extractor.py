@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from agents import Agent, Runner, TResponseInputItem, trace
 from clients.instagram.client import get_instagram_data
+from test_invoke import test_invoke
 
 
 class ImageAnalysis(BaseModel):
@@ -104,7 +105,7 @@ async def analyze_single_url(session: aiohttp.ClientSession, url: str) -> ImageA
                 )
             # If it might be an image, proceed with analysis
 
-        print(f"Analyzing image URL: {url}")
+        # print(f"Analyzing image URL: {url}")
         result = await Runner.run(image_analyzer_agent, input_message)
         analysis = result.final_output_as(ImageAnalysis)
         # Ensure is_image is set correctly even if model doesn't explicitly set it
@@ -176,7 +177,7 @@ async def process_urls(urls: List[str]) -> List[ImageAnalysis]:
         # Run analysis for all URLs concurrently
         analysis_tasks = [analyze_single_url(session, url) for url in urls]
 
-        print(f"\nStarting analysis for {len(urls)} URLs...")
+        # print(f"\nStarting analysis for {len(urls)} URLs...")
         # Use a trace for the entire workflow
         with trace("URL Analysis Workflow"):
             results = await asyncio.gather(*analysis_tasks)
@@ -219,20 +220,23 @@ async def main():
     ]
 
     # Use the new function to generate markdown
-    markdown_output = await generate_markdown_from_urls(urls)    
+    markdown_output = await generate_markdown_from_urls(urls)  
+    out = await test_invoke(f'What country do you recommend according to the following description? {markdown_output}')  
+    print(out)
 
     print("\n--- Individual URL Analysis Results ---")
     # Print detailed results for each URL
     all_analysis_results = await process_urls(urls)
     for i, (url, analysis) in enumerate(zip(urls, all_analysis_results), 1):
-        print(f"\nURL: {url}")
-        print(f"  Is Image: {analysis.is_image}")
+        # print(f"\nURL: {url}")
+        # print(f"  Is Image: {analysis.is_image}")
 
-        if analysis.is_image:
-            print(f"  Description: {analysis.description}")
-            print(f"  Location: {analysis.location or 'Not identified'}")
-        else:
-            print(f"  Error: {analysis.error}")
+        # if analysis.is_image:
+        #     print(f"  Description: {analysis.description}")
+        #     print(f"  Location: {analysis.location or 'Not identified'}")
+        # else:
+        #     print(f"  Error: {analysis.error}")
+        continue
 
     print("\n--- Markdown Output ---")
     print(markdown_output)
