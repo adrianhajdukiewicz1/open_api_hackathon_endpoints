@@ -2,6 +2,7 @@ import uuid
 from typing import Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from agents import (
@@ -21,6 +22,15 @@ app = FastAPI(
     title="Travel Planning API",
     description="API for generating travel plans using AI agents and Instagram profile analysis",
     version="1.0.0",
+)
+
+# Add CORS middleware to allow cross-origin requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
 )
 
 # Storage for conversation histories
