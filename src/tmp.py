@@ -1,11 +1,8 @@
 # tmp.py
 import asyncio
-import base64
-import os
 import uuid
 from typing import List, Optional
 
-import httpx
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 

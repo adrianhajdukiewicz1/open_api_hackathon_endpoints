@@ -1,5 +1,8 @@
-import asyncio
-import uuid
+# filepath: /Users/yuriybabyak/repo/hackaton/open_api_hackathon_endpoints/src/agents_fastapi.py
+"""
+This module contains agent definitions for the travel planning system.
+"""
+
 from typing import List, Optional
 
 from openai import AsyncOpenAI
@@ -38,6 +41,10 @@ class URLAnalysisResult(BaseModel):
     )
     error: Optional[str] = Field(
         default=None, description="Any error encountered during analysis."
+    )
+    # For compatibility with the original code
+    extracted_text: Optional[str] = Field(
+        default="", description="Extracted text from the page"
     )
 
 
@@ -81,6 +88,7 @@ async def describe_instagram_profile(username_or_url: str) -> URLAnalysisResult:
     return URLAnalysisResult(
         url=username_or_url,
         image_descriptions=result.image_descriptions,
+        extracted_text="",  # Add this field for compatibility
         error=result.error,
     )
 
@@ -126,95 +134,3 @@ PlanningAgent = Agent(
 
 # Define handoffs now that all agents are declared
 TriageAgent.handoffs.append(handoff(agent=PlanningAgent))
-
-
-# --- Main Execution Logic ---
-
-
-async def main():
-    current_agent: Agent = TriageAgent
-    input_items: list[TResponseInputItem] = []
-    context = {}  # Add context if needed later
-
-    conversation_id = uuid.uuid4().hex[:16]
-    print("Starting travel planning conversation...")
-    print(f"Conversation ID: {conversation_id}")
-    print("-" * 30)
-
-    while True:
-        user_input = input("You: ")
-        if user_input.lower() in ["quit", "exit"]:
-            print("Ending conversation.")
-            break
-
-        with trace(
-            f"Travel Planning Turn ({current_agent.name})", group_id=conversation_id
-        ):
-            input_items.append({"content": user_input, "role": "user"})
-
-            print(f"\n--- Running {current_agent.name} ---")
-            try:
-                result = await Runner.run(current_agent, input_items, context=context)
-
-                for new_item in result.new_items:
-                    agent_name = new_item.agent.name
-                    if isinstance(new_item, MessageOutputItem):
-                        text_output = ItemHelpers.text_message_output(new_item)
-                        print(f"{agent_name}: {text_output}")
-                        # Check if this is the final plan output
-                        if new_item.agent == PlanningAgent and isinstance(
-                            result.final_output, TravelPlan
-                        ):
-                            print("\n--- Generated Travel Plan ---")
-                            # Output is already structured, just print confirmation
-                            print(result.final_output.model_dump_json(indent=2))
-                            print(
-                                "\nPlan generated. You can ask for refinements or type 'quit' to exit."
-                            )
-                            # Optionally break or change loop condition here
-                    elif isinstance(new_item, HandoffOutputItem):
-                        print(
-                            f"\n[System] Handed off from {new_item.source_agent.name} to {new_item.target_agent.name}\n"
-                        )
-                    elif isinstance(new_item, ToolCallItem):
-                        print(f"{agent_name}: Calling tool '{new_item}'...")
-                    elif isinstance(new_item, ToolCallOutputItem):
-                        # Don't print the full tool output by default, it can be large
-                        # Check if it's our specific tool and maybe print a summary
-                        if isinstance(
-                            new_item.output, FunctionToolResult
-                        ) and isinstance(new_item.output.output, URLAnalysisResult):
-                            analysis: URLAnalysisResult = new_item.output.output
-                            status = (
-                                "successfully"
-                                if not analysis.error
-                                else f"with error: {analysis.error}"
-                            )
-                            print(
-                                f"{agent_name}: Tool 'describe_instagram_profile' finished {status}."
-                            )
-                            print(
-                                f"  - Extracted ~{len(analysis.extracted_text)} chars of text."
-                            )
-                            print(
-                                f"  - Described {len(analysis.image_descriptions)} images."
-                            )
-                        else:
-                            # Generic tool output confirmation
-                            print(f"{agent_name}: Tool call finished.")
-                    else:
-                        # Catch other item types if necessary
-                        pass
-
-                input_items = result.to_input_list()
-                current_agent = result.last_agent  # Update agent after handoff
-
-            except Exception as e:
-                print(f"\n--- An Error Occurred ---")
-                print(f"Error during {current_agent.name} execution: {e}")
-                # Optionally reset or break
-                break
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
