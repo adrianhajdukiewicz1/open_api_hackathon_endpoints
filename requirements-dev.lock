@@ -24,6 +24,10 @@ anyio==4.9.0
     # via openai
     # via sse-starlette
     # via starlette
+apify-client==1.9.4
+    # via open-api-hackathon-endpoints
+apify-shared==1.4.0
+    # via apify-client
 attrs==25.3.0
     # via aiohttp
 certifi==2025.1.31
@@ -51,6 +55,7 @@ h11==0.16.0
 httpcore==1.0.9
     # via httpx
 httpx==0.28.1
+    # via apify-client
     # via mcp
     # via open-api-hackathon-endpoints
     # via openai
@@ -61,12 +66,16 @@ idna==3.10
     # via httpx
     # via requests
     # via yarl
+instaloader==4.14.1
+    # via open-api-hackathon-endpoints
 jiter==0.9.0
     # via openai
 loguru==0.7.3
     # via open-api-hackathon-endpoints
 mcp==1.6.0
     # via openai-agents
+more-itertools==10.7.0
+    # via apify-client
 multidict==6.4.3
     # via aiohttp
     # via yarl
@@ -92,6 +101,7 @@ pydantic-settings==2.9.1
 python-dotenv==1.1.0
     # via pydantic-settings
 requests==2.32.3
+    # via instaloader
     # via openai-agents
 sniffio==1.3.1
     # via anyio
