@@ -50,6 +50,7 @@ class URLAnalysisResult(BaseModel):
 
 class TravelPlan(BaseModel):
     destination: str = Field(description="The primary destination of the trip.")
+    geo_location: List[str] = Field(description="Destination attitudes and longitude")
     dates: Optional[str] = Field(
         default=None, description="Proposed or requested dates for the trip."
     )
@@ -91,6 +92,31 @@ async def describe_instagram_profile(username_or_url: str) -> URLAnalysisResult:
         extracted_text="",  # Add this field for compatibility
         error=result.error,
     )
+
+
+class MockLocationResult(BaseModel):
+    """Result containing mock locations mapped from a profile."""
+
+    profile_source: str = Field(description="The Instagram profile used as the source.")
+    mapped_locations: List[str] = Field(
+        description="A list of mock travel destinations inspired by the profile."
+    )
+
+
+@function_tool
+async def get_locations_attitude_for_destinations(
+    username_or_url: str,
+) -> MockLocationResult:
+    """
+    Gets a list of *mock* travel locations potentially inspired by an Instagram profile.
+    It simulates analyzing the profile for places visited and returns a predefined list
+    of interesting destinations. Use this when the user asks for location ideas or
+    places visited based on a profile, rather than image descriptions.
+
+    Args:
+        username_or_url: The Instagram username or profile URL to simulate analyzing.
+    """
+    print(f"[Tool] Getting mock locations inspired by: {username_or_url}")
 
 
 # --- Agent Definitions ---
