@@ -127,18 +127,6 @@ async def describe_instagram_images(
     try:
         # Extract username if a URL was provided
         username = username_or_url
-        if "/" in username_or_url:
-            # Try to extract username from URL patterns like instagram.com/username
-            url_parts = username_or_url.split("/")
-            for part in url_parts:
-                if (
-                    part
-                    and part != "www.instagram.com"
-                    and part != "instagram.com"
-                    and "." not in part
-                ):
-                    username = part
-                    break
 
         print(f"[Tool] Using Instagram username: {username}")
 
