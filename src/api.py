@@ -159,14 +159,6 @@ async def conversation(request: ConversationRequest):
     travel_plan = None
 
     try:
-        # Configure agent with TripAdvisor MCP server if it's the PlanningAgent
-        if current_agent.name == "PlanningAgent" and tripadvisor_mcp_server:
-            # Create a copy of the agent to avoid modifying the original
-            enhanced_agent = current_agent.copy()
-            enhanced_agent.mcp_servers = [tripadvisor_mcp_server]
-            current_agent = enhanced_agent
-            print(f"Enhanced PlanningAgent with TripAdvisor MCP server for session {session_id}")
-        
         # Run the agent
         result = await Runner.run(current_agent, input_items, context=context)
 
