@@ -37,7 +37,7 @@ class InstagramAnalysisResult(BaseModel):
     )
 
 
-def get_instagram_images_urls(username: str, imgs_limit: int = 10) -> List[str]:
+def get_instagram_images_urls(username: str, imgs_limit: int = 2) -> List[str]:
     """
     Retrieve Instagram image URLs for a given username.
 
@@ -112,7 +112,7 @@ def get_instagram_data(
 
 
 async def describe_instagram_images(
-    username_or_url: str, max_images: int = 10
+    username_or_url: str, max_images: int = 2
 ) -> InstagramAnalysisResult:
     """
     Fetches Instagram images for a given username or profile URL and uses a vision model to describe them.

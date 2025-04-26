@@ -3,7 +3,7 @@ from apify_client import ApifyClient
 from typing import List
 
 
-def get_instagram_images_urls(username_or_url: str, imgs_limit: int = 10):
+def get_instagram_images_urls(username_or_url: str, imgs_limit: int = 1):
     """
     Retrieve Instagram image URLs for a given username or URL.
 
@@ -23,7 +23,7 @@ def get_instagram_images_urls(username_or_url: str, imgs_limit: int = 10):
 
 def get_instagram_data(
     username: str,
-    limit: int = 10,
+    limit: int = 1,
     search_type: str = "user",
     results_type: str = "posts",
     add_parent_data: bool = False,
