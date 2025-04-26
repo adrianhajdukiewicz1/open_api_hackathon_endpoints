@@ -42,7 +42,10 @@ charset-normalizer==3.4.1
 click==8.1.8
     # via uvicorn
 colorama==0.4.6
+    # via click
     # via griffe
+    # via loguru
+    # via tqdm
 dataclasses-json==0.6.7
     # via langchain-community
 distro==1.9.0
@@ -210,6 +213,8 @@ urllib3==2.4.0
 uvicorn==0.34.2
     # via mcp
     # via open-api-hackathon-endpoints
+win32-setctime==1.2.0
+    # via loguru
 yarl==1.20.0
     # via aiohttp
 zstandard==0.23.0

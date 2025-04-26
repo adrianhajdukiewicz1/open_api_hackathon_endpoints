@@ -3,18 +3,11 @@ from pydantic import BaseModel
 from typing import List, Optional
 from loguru import logger
 from src.clients.instagram.client import get_instagram_images_urls
-
-    
-import asyncio
-
-from .chatbot import QueueCallbackHandler, agent_executor
-from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Instagram API Endpoints", 
               description="API endpoints for Instagram data retrieval",
               version="1.0.0")
-
 
 class InstagramImageResponse(BaseModel):
     urls: List[str]
@@ -23,9 +16,6 @@ class SecondEndpointResponse(BaseModel):
     message: str
     status: str
     timestamp: str
-
-class InvokeRequest(BaseModel):
-    content: str
 
 @app.get("/")
 async def root():
@@ -86,9 +76,6 @@ async def second_endpoint(param1: str, param2: Optional[str] = None):
     except Exception as e:
         logger.error(f"Error in second endpoint: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")
-    
-# initializing our application
-app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
@@ -97,45 +84,3 @@ app.add_middleware(
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
 )
-
-# streaming function
-async def token_generator(content: str, streamer: QueueCallbackHandler):
-    task = asyncio.create_task(agent_executor.invoke(
-        input=content,
-        streamer=streamer,
-        verbose=True  # set to True to see verbose output in console
-    ))
-    # initialize various components to stream
-    async for token in streamer:
-        try:
-            if token == "<<STEP_END>>":
-                # send end of step token
-                # yield "</step>"
-                pass
-            elif tool_calls := token.message.additional_kwargs.get("tool_calls"):
-                if tool_name := tool_calls[0]["function"]["name"]:
-                    # send start of step token followed by step name tokens
-                    # yield f"<step><step_name>{tool_name}</step_name>"
-                    pass
-                if tool_args := tool_calls[0]["function"]["arguments"]:
-                    # tool args are streamed directly, ensure it's properly encoded
-                    yield tool_args
-        except Exception as e:
-            print(f"Error streaming token: {e}")
-            continue
-    await task
-
-# invoke function
-@app.post("/api/invoke")
-async def invoke(request: InvokeRequest):
-    queue: asyncio.Queue = asyncio.Queue()
-    streamer = QueueCallbackHandler(queue)
-    # return the streaming response
-    return StreamingResponse(
-        token_generator(request.content, streamer),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-        }
-    )
