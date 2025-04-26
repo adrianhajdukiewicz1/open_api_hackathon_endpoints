@@ -3,7 +3,7 @@
 This module contains agent definitions for the travel planning system.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
@@ -23,8 +23,21 @@ from agents import (
     handoff,
     trace,
 )
+from agents.mcp import (
+    MCPServerStdio,
+    MCPServerSse,
+)
 from agents.extensions.handoff_prompt import RECOMMENDED_PROMPT_PREFIX
 from instagram_image_extractor import describe_instagram_images
+
+# Initialize the TripAdvisor MCP server directly
+tripadvisor_mcp_server = MCPServerStdio(
+    params={
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-filesystem", 
+                 "/Users/adrianhajdukiewicz/projects/tripadvisor-mcp-server"],
+    }
+)
 
 # --- Pydantic Models for Structured Data ---
 
@@ -48,6 +61,17 @@ class URLAnalysisResult(BaseModel):
     )
 
 
+class TripAdvisorLocation(BaseModel):
+    """Details about a location from TripAdvisor"""
+    name: str = Field(description="Name of the location")
+    location_id: str = Field(description="TripAdvisor location ID")
+    category: Optional[str] = Field(default=None, description="Category of the location (attraction, restaurant, hotel)")
+    address: Optional[str] = Field(default=None, description="Address of the location")
+    rating: Optional[float] = Field(default=None, description="Rating of the location (1-5)")
+    num_reviews: Optional[int] = Field(default=None, description="Number of reviews")
+    description: Optional[str] = Field(default=None, description="Description of the location")
+
+
 class TravelPlan(BaseModel):
     destination: str = Field(description="The primary destination of the trip.")
     geo_location: List[str] = Field(description="Destination attitudes and longitude")
@@ -57,6 +81,10 @@ class TravelPlan(BaseModel):
     summary: str = Field(description="A brief summary of the proposed trip plan.")
     daily_itinerary: List[str] = Field(
         description="A list of activities or places to visit for each day or key period."
+    )
+    recommended_places: List[TripAdvisorLocation] = Field(
+        default_factory=list,
+        description="List of specific places recommended from TripAdvisor data."
     )
     notes: Optional[str] = Field(
         default=None,
@@ -145,17 +173,32 @@ PlanningAgent = Agent(
     instructions=f"""{RECOMMENDED_PROMPT_PREFIX}
     You are the final step in the travel planning process. You receive the conversation history which includes:
     - The user's initial preferences (destination, dates, interests) from the TriageAgent.
-    - The analysis results (image descriptions) from an Instagram profile provided by the user, processed by the InstagramImagesExtractor via the `describe_instagram_profile` tool (check the tool output messages).
-    Your task is to synthesize ALL this information into a cohesive travel plan.
-    Specifically:
+    - The analysis results (image descriptions) from an Instagram profile provided by the user, processed via the `describe_instagram_profile` tool (check the tool output messages).
+    
+    You have access to TripAdvisor data through the MCP server tools, which provide you with:
+    - Location search for attractions, restaurants, and hotels in the destination
+    - Detailed information about specific locations including reviews, ratings, and photos
+    - Data about nearby points of interest and recommendations
+    
+    Your task is to synthesize ALL this information into a cohesive travel plan:
+    
     1. Review the user's initial request and preferences.
     2. Carefully review the image descriptions from the `describe_instagram_profile` tool output. These provide valuable visual inspiration for the plan.
-    3. Create a structured travel plan based on *both* the user's preferences *and* the insights from the Instagram image analysis.
-    4. The plan should include a destination, proposed dates (if specific enough), a summary, a suggested daily itinerary (or key activities list), and any relevant notes derived from the Instagram content (e.g., mentioning specific sights from images, incorporating themes you observed).
-    5. Output the final plan using the structured `TravelPlan` format. Make the itinerary detailed and engaging.
+    3. Use the TripAdvisor MCP server tools to find attractions, restaurants, and hotels in the user's desired destination.
+    4. Create a structured travel plan based on the user's preferences, the Instagram image analysis, AND the TripAdvisor data.
+    5. The plan should include:
+       - Destination and dates (if mentioned by the user)
+       - A summary of the plan
+       - A detailed daily itinerary with specific attractions, restaurants, and activities from TripAdvisor
+       - A list of recommended places with their ratings and descriptions from TripAdvisor
+       - Notes derived from the Instagram content that influenced your recommendations
+    
+    6. Output the final plan using the structured `TravelPlan` format. Make the itinerary detailed, practical, and engaging.
+    7. Be prepared to answer follow-up questions about specific attractions, accommodations, or activities using the TripAdvisor data.
     """,
     output_type=TravelPlan,
     model_settings=ModelSettings(temperature=0.7),  # Allow for creativity in planning
+    mcp_servers=[tripadvisor_mcp_server],  # Directly connect to the TripAdvisor MCP server
 )
 
 # Define handoffs now that all agents are declared

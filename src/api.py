@@ -1,9 +1,12 @@
 import uuid
+import os
+import asyncio
 from typing import Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from contextlib import asynccontextmanager
 
 from agents import (
     Runner,
@@ -15,14 +18,11 @@ from agents import (
     ToolCallItem,
     ToolCallOutputItem,
 )
-from agents_fastapi import TriageAgent, PlanningAgent, TravelPlan, URLAnalysisResult
-
-# Create FastAPI app
-app = FastAPI(
-    title="Travel Planning API",
-    description="API for generating travel plans using AI agents and Instagram profile analysis",
-    version="1.0.0",
+from agents.mcp import (
+    MCPServerStdio,
+    MCPServerSse,
 )
+from agents_fastapi import TriageAgent, PlanningAgent, TravelPlan, URLAnalysisResult
 
 # Add CORS middleware
 app.add_middleware(
@@ -36,6 +36,61 @@ app.add_middleware(
 # Storage for conversation histories
 # Using a simple in-memory dictionary - in production, use a proper database
 conversations: Dict[str, dict] = {}
+
+# TripAdvisor MCP server instance
+tripadvisor_mcp_server: Optional[MCPServerStdio] = None
+
+# Initialize and connect to the TripAdvisor MCP server
+async def initialize_tripadvisor_mcp_server():
+    """Initialize and connect to the TripAdvisor MCP server"""
+    try:
+        # Connect to the TripAdvisor MCP server
+        mcp_server = MCPServerStdio(
+            params={
+                "command": "npx",
+                "args": ["-y", "@modelcontextprotocol/server-filesystem", 
+                         "/Users/adrianhajdukiewicz/projects/tripadvisor-mcp-server"],
+            }
+        )
+        
+        # Connect to the server
+        await mcp_server.connect()
+        
+        # List available tools for debugging
+        tools = await mcp_server.list_tools()
+        print(f"TripAdvisor MCP server connected with tools: {tools}")
+        
+        return mcp_server
+    except Exception as e:
+        print(f"Error initializing TripAdvisor MCP server: {e}")
+        return None
+
+# FastAPI lifespan for managing connections
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize MCP servers on startup
+    global tripadvisor_mcp_server
+    tripadvisor_mcp_server = await initialize_tripadvisor_mcp_server()
+    
+    if tripadvisor_mcp_server:
+        print("TripAdvisor MCP server initialized successfully")
+    else:
+        print("Warning: TripAdvisor MCP server failed to initialize")
+    
+    yield
+    
+    # Cleanup MCP servers on shutdown
+    if tripadvisor_mcp_server:
+        await tripadvisor_mcp_server.disconnect()
+        print("TripAdvisor MCP server disconnected")
+
+# Create FastAPI app with lifespan
+app = FastAPI(
+    title="Travel Planning API",
+    description="API for generating travel plans using AI agents and Instagram profile analysis",
+    version="1.0.0",
+    lifespan=lifespan,
+)
 
 # --- API Models ---
 
