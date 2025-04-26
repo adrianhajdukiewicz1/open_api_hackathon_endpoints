@@ -2,19 +2,15 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
 from loguru import logger
+from src.clients.instagram.client import get_instagram_images_urls
 
 app = FastAPI(title="Instagram API Endpoints", 
               description="API endpoints for Instagram data retrieval",
               version="1.0.0")
 
-# Models
-class InstagramImageUrl(BaseModel):
-    url: str
-    alt_text: Optional[str] = None
 
 class InstagramImageResponse(BaseModel):
-    urls: List[InstagramImageUrl]
-    count: int
+    urls: List[str]
 
 class SecondEndpointResponse(BaseModel):
     message: str
@@ -26,29 +22,24 @@ async def root():
     return {"message": "Welcome to Instagram API Endpoints"}
 
 @app.get("/api/get_instagram_imgs_urls", response_model=InstagramImageResponse)
-async def get_instagram_imgs_urls(username: str, limit: Optional[int] = 10):
+async def get_instagram_imgs_urls_endpoint(username: str, imgs_limit: Optional[int] = 2):
     """
     Retrieve Instagram image URLs for a given username.
     
     Args:
         username: Instagram username to fetch images from
-        limit: Maximum number of images to return (default: 10)
+        imgs_limit: Maximum number of images to return (default: 10)
     
     Returns:
-        A list of image URLs and related metadata
+        A list of image URLs
     """
     try:
-        logger.info(f"Fetching Instagram images for username: {username}, limit: {limit}")
+        logger.info(f"Fetching Instagram images for username: {username}, limit: {imgs_limit}")
         
-        # This is a mock implementation. In a real application, you would connect to 
-        # Instagram's API or use a scraping library to get actual data
-        mock_urls = [
-            InstagramImageUrl(url=f"https://instagram.com/{username}/image_{i}.jpg", 
-                             alt_text=f"Image {i} for {username}")
-            for i in range(1, min(limit + 1, 21))
-        ]
+        # Call the actual implementation from the Instagram client
+        image_urls = get_instagram_images_urls(username=username, imgs_limit=imgs_limit)
         
-        return InstagramImageResponse(urls=mock_urls, count=len(mock_urls))
+        return InstagramImageResponse(urls=image_urls)
     
     except Exception as e:
         logger.error(f"Error fetching Instagram images: {str(e)}")
