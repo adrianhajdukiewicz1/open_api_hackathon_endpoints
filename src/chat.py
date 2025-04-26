@@ -85,7 +85,7 @@ class UserProfile(BaseModel):
 
 # image_analyzer_agent
 image_analyzer_agent = Agent(
-    name="Image Analyzer",
+    name="Image_Analyzer",
     instructions=(
         "You are an expert image analyst. Analyze the provided image URL. "
         "Describe the main subject and scene concisely. Include context like landscape type (beach, mountain, city), potential activities, and overall vibe. "
@@ -94,6 +94,7 @@ image_analyzer_agent = Agent(
         "Respond ONLY with the JSON object matching the ImageAnalysis schema."
     ),
     model="gpt-4o",
+    tools=[get_image_urls_from_source],
     output_type=ImageAnalysis,
 )
 
@@ -312,11 +313,11 @@ travel_profiler_agent = Agent(
         "   - A direct link to an image (e.g., https://example.com/image.jpg) "
         "   - A webpage URL (like a blog post, social media profile - e.g., public Instagram, Pinterest board) that contains images. "
         "   Make it clear you need a single, specific URL. "
-        "3. Once the user provides a URL, confirm you will analyze it and use the 'get_image_urls_from_source' tool to extract images. Respond conversationally and **only** use the tool. Do not add extra commentary before the tool call result is known. "
+        "3. Once the user provides a URL, confirm you will analyze it and use the 'Image_Analyzer' agent to extract images and their details. "
         "4. The system will then analyze the images and generate a profile. You will be informed of the profile summary. "
         "5. Present the profile summary you are given back to the user conversationally. Ask follow-up questions based on the profile to continue the conversation."
     ),
-    tools=[get_image_urls_from_source],
+    handoffs=[image_analyzer_agent],
     model="gpt-4o-mini",
 )
 
@@ -396,14 +397,14 @@ async def chat_endpoint(payload: ChatMessage = Body(...)):
                         if text:
                             agent_response_text += text.strip() + "\n"
                     elif (
-                        isinstance(item, ToolCallOutputItem)
-                        and item.tool_name == "get_image_urls_from_source"
+                        item.type == "tool_call_item"
+                        and item.raw_item.name == "get_image_urls_from_source"
                     ):
                         if isinstance(item.output, list):
                             extracted_urls = item.output
                         else:
                             print(
-                                f"Warning: Tool {item.tool_name} output was not a list: {type(item.output)}"
+                                f"Warning: Tool {item.raw_item.tool_name} output was not a list: {type(item.output)}"
                             )
 
                 # --- Orchestration: Analyze and Synthesize if URLs were extracted ---

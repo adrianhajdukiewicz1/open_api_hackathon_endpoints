@@ -179,11 +179,10 @@ async def process_urls(urls: List[str]) -> List[ImageAnalysis]:
 
         # print(f"\nStarting analysis for {len(urls)} URLs...")
         # Use a trace for the entire workflow
-        with trace("URL Analysis Workflow"):
-            results = await asyncio.gather(*analysis_tasks)
-            all_analysis_results.extend(results)
+        results = await asyncio.gather(*analysis_tasks)
+        all_analysis_results.extend(results)
 
-            return all_analysis_results
+        return all_analysis_results
 
 
 async def generate_markdown_from_urls(urls: List[str]) -> str:
@@ -213,6 +212,7 @@ async def generate_markdown_from_urls(urls: List[str]) -> str:
 
     return markdown_output
 
+
 async def main():
     urls = [
         "https://scontent-waw2-2.cdninstagram.com/v/t51.29350-15/248951567_1668035853399331_1015357667300622163_n.webp?stp=dst-jpg_e35_tt6&efg=eyJ2ZW5jb2RlX3RhZyI6IkNBUk9VU0VMX0lURU0uaW1hZ2VfdXJsZ2VuLjE0NDB4MTgwMC5zZHIuZjI5MzUwLmRlZmF1bHRfaW1hZ2UifQ&_nc_ht=scontent-waw2-2.cdninstagram.com&_nc_cat=107&_nc_oc=Q6cZ2QGcriQjbYsoPru8nxnhUr2bHb7ad_0XwEYKsT7EhpRONOCnSRNQQJIecu8wbS1ZGUg&_nc_ohc=8EVN3DPiIM8Q7kNvwFpfI0p&_nc_gid=6_uYBzi--I5aJnYSJ57oLA&edm=AP4sbd4BAAAA&ccb=7-5&ig_cache_key=MjY5MzI3MDYxMDIwMjY5MjMxOQ%3D%3D.3-ccb7-5&oh=00_AfHEMFlfcTxNwKdIbgkvygPdOYZb_iEDuL7AkA37iHoRIg&oe=6811E167&_nc_sid=7a9f4b",
@@ -220,8 +220,10 @@ async def main():
     ]
 
     # Use the new function to generate markdown
-    markdown_output = await generate_markdown_from_urls(urls)  
-    out = await test_invoke(f'What country do you recommend according to the following description? {markdown_output}')  
+    markdown_output = await generate_markdown_from_urls(urls)
+    out = await test_invoke(
+        f"What country do you recommend according to the following description? {markdown_output}"
+    )
     print(out)
 
     print("\n--- Individual URL Analysis Results ---")
